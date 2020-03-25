@@ -4,11 +4,12 @@ const PORT = process.env.PORT || 4000;
 const path = require('path');
 const mongoose = require('mongoose');
 const User = require(path.join(__dirname, 'Models/User'));
+const Ball = require(path.join(__dirname, 'ball'));
 require('dotenv').config();
 const { DB_USER, DB_PASS } = process.env;
 
 //Serve game
-app.use(express.static(path.join(__dirname, 'public/play')));
+app.use(express.static(path.join(__dirname, 'public')));
 //Get face and name
 app.get('/profile', async function (req, res) {
   let id = req.query.a;
@@ -22,7 +23,7 @@ app.get('/profile', async function (req, res) {
 });
 app.get('/face', async function (req, res) {
   let id = req.query.a;
-  let profile = await User.findById(id,'avatar')
+  let profile = await User.findById(id, 'avatar')
   res.status(200).send(JSON.stringify(profile))
 });
 //Connect to Mongo
@@ -36,87 +37,150 @@ mongoose
 const server = app.listen(PORT, console.log(`Server started on port ${PORT}: http://localhost:${PORT}`));
 
 const io = require('socket.io')(server);
+
+
+let playerQueue = [];
 const players = {};
-let food = [];
-let bullets = {};
-let usedBullets = [];
-let deadPlayers = [];
-let mapSize = 2000
-function getRndInteger (min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
+const edgeX1 = -500
+const edgeX2 = 500
+const edgeY1 = -300
+const edgeY2 = 300
+const ball = new Ball;
+let player1Status = 0;
+let player2Status = 0;
+let player1Score = 0;
+let player2Score = 0;
+const paddle1 = {
+  x: -480,
+  y: 0,
+  width: 10,
+  height: 70,
 }
-function distance (x1, y1, x2, y2) {
-  return Math.floor(Math.abs(Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))))
+const paddle2 = {
+  x: 480,
+  y: 0,
+  width: 10,
+  height: 70,
 }
-function playerCheck () {
-  //food collision check
-  Object.values(players).forEach(player => {
-    food.forEach(fd => {
-      if (distance(player.x, player.y, fd.x, fd.y) < player.r) {
-        io.to(`${player.id}`).emit('foodEaten')
-        fd.x = getRndInteger(-mapSize, mapSize);
-        fd.y = getRndInteger(-mapSize, mapSize);
-      }
-    })
-    //bullet collision check
-    if (Object.values(bullets).flat().length) {
-      Object.values(bullets).flat().forEach((bullet, index) => {
-        let d = distance(player.x, player.y, bullet.x, bullet.y)
-        if (d < player.r && !usedBullets.includes(`${bullet.id}: ${bullet.bulletId}`)) {
-          usedBullets.push(`${bullet.id}: ${bullet.bulletId}`)
-          io.to(`${player.id}`).emit('hit')
-          io.to(`${bullet.id}`).emit('deleteBullet', bullet.bulletId)
-          bullets[bullet.id].splice(index, 1);
-        }
-      })
+
+function collisionCheck () {
+}
+setInterval(heartbeat, 16);
+function heartbeat () {
+  if (playerQueue.length > 0) {
+    if (player1Status === 1 && player2Status === 1) {
+      ball.update()
+      collisionCheck();
+      edgeCheck()
+      scoreCheck();
+    } else {
+      ball.waiting()
+      edgeCheck()
     }
-  })
-}
-class Food {
-  constructor(x, y) {
-    this.mass = 2000;
-    this.x = x;
-    this.y = y;
-    this.radius = 15;
+    io.sockets.emit('heartbeat', {
+      players: Object.values(players),
+      player1Score,
+      player2Score,
+      ballX: ball.x,
+      ballY: ball.y,
+      player1Status,
+      player2Status,
+    });
   }
 }
-for (let i = 0; i < 100; i++) {
-  food.push(new Food(getRndInteger(-mapSize, mapSize), getRndInteger(-mapSize, mapSize)))
-}
-setInterval(heartbeat, 33);
-function heartbeat () {
-  playerCheck();
-  io.sockets.emit('heartbeat', {
-    players: Object.values(players),
-    food,
-    bullets: Object.values(bullets).flat(),
-  });
-}
+
 
 
 io.sockets.on('connection', socket => {
   console.log('new connection ' + socket.id)
-
+  playerQueue.push(socket.id)
+  players[socket.id] = {
+    position: playerQueue.indexOf(socket.id)
+  }
   socket.on('updatePlayer', data => {
-    if (!deadPlayers.includes(socket.id)) players[socket.id] = data;
+    players[socket.id] = { ...players[socket.id], ...data };
   })
-  socket.on('updateBullets', data => {
-    bullets[socket.id] = data.bullets;
+  socket.on('player1', data => {
+    paddle1.y = data;
+    socket.broadcast.emit('player1', data)
+  })
+  socket.on('player2', data => {
+    player2.y = data;
+    socket.broadcast.emit('player2', data)
   })
 
-  socket.on('playerEaten', id => {
-    io.to(`${id}`).emit('dead', 'You died')
-    deadPlayers.push(id)
-    delete players[id]
-    io.sockets.emit('heartbeat', {
-      players: Object.values(players),
-      food,
-    });
-  })
+
+
 
   socket.on('disconnect', () => {
     delete players[socket.id]
-    delete bullets[socket.id]
+    playerQueue = playerQueue.filter(player => {
+      return player !== socket.id
+    })
+    Object.keys(players).forEach(socketID => {
+      players[socketID].position = playerQueue.indexOf(socketID)
+    })
     console.log('Client has disconnected');
   });
 });
+
+function collisionCheck () {
+  //Right paddle
+  if (ball.x + ball.radius >= paddle2.x - paddle2.width / 2 && ball.y > paddle2.y - paddle2.height / 2 - 3 && ball.y < paddle2.y + paddle2.height / 2 + 3) {
+    ball.speed *= 1.05;
+    let distFromMiddle = ball.y - paddle2.y;
+    ball.angle = map(distFromMiddle, 35, -35, 45, -45);
+    ball.speedX = -ball.speed * Math.cos(ball.angle * (Math.PI / 180));
+    ball.speedY = ball.speed * Math.sin(ball.angle * (Math.PI / 180));
+    //Left paddle
+  } else if (ball.x - ball.radius <= paddle1.x + paddle1.width / 2 && ball.y > paddle1.y - paddle1.height / 2 - 3 && ball.y < paddle1.y + paddle1.height / 2 + 3) {
+    ball.speed *= 1.05;
+    let distFromMiddle = ball.y - paddle1.y;
+    ball.angle = map(distFromMiddle, 35, -35, 45, -45);
+    ball.speedX = ball.speed * Math.cos(ball.angle * (Math.PI / 180));
+    ball.speedY = ball.speed * Math.sin(ball.angle * (Math.PI / 180));
+  }
+}
+function scoreCheck () {
+  if (player1Score >= 5 || player2Score >= 5) {
+    ball.speedX = 0;
+    setTimeout(() => {
+      player1Status = 0;
+      player2Status = 0;
+      reset()
+    }, 1000);
+  }
+}
+function reset () {
+  gameOver = false;
+  player1Score = 0;
+  player2Score = 0;
+  paddle1.y = 0;
+  paddle2.y = 0;
+  ball.reset();
+}
+function edgeCheck () {
+  if (ball.x - ball.radius <= edgeX1) {
+    player2Score++;
+    ball.point()
+    setTimeout(() => {
+      ball.reset();
+    }, 700);
+  }
+  else if (ball.x + ball.radius >= edgeX2) {
+    player1Score++;
+    ball.point()
+    setTimeout(() => {
+      ball.reset()
+    }, 700);
+  }
+  else if (ball.y - ball.radius <= edgeY1) ball.speedY = -ball.speedY;
+  else if (ball.y + ball.radius >= edgeY2) ball.speedY = -ball.speedY;
+}
+function map (value, range1Max, range1Min, range2Max, range2Min) {
+  if (value > range1Max) value = range1Max;
+  else if (value < range1Min) value = range1Min;
+
+  return Math.round(value * range2Max / range1Max)
+
+}
