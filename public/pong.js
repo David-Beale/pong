@@ -187,6 +187,7 @@ function displayScore () {
   text(`Player 2: ${player2Score}`, +250, -365)
 }
 function displayPlayerPics () {
+  console.log(players)
   players.forEach((plyr) => {
     let position = plyr.position
     if (plyr.id !== socket.id && position <=9 && position >=0) {
