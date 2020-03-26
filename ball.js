@@ -12,7 +12,7 @@ const ball = class Ball {
   }
   waiting () {
     this.x =0
-    this.y += 10;
+    this.y += this.speedY;
   }
 
 

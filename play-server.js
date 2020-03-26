@@ -50,6 +50,7 @@ let player1Status = 0;
 let player2Status = 0;
 let player1Score = 0;
 let player2Score = 0;
+let once = 0;
 const paddle1 = {
   x: -480,
   y: 0,
@@ -105,14 +106,24 @@ io.sockets.on('connection', socket => {
     socket.broadcast.emit('player1', data)
   })
   socket.on('player2', data => {
-    player2.y = data;
+    paddle2.y = data;
     socket.broadcast.emit('player2', data)
+  })
+  socket.on('playerReady', data => {
+    if (data === 0) player1Status = 1;
+    else if (data === 1) player2Status = 1;
   })
 
 
 
 
   socket.on('disconnect', () => {
+    if (playerQueue.indexOf(socket.id) <= 1) {
+      player1Status = 0;
+      player2Status = 0;
+      reset()
+
+    }
     delete players[socket.id]
     playerQueue = playerQueue.filter(player => {
       return player !== socket.id
@@ -120,6 +131,7 @@ io.sockets.on('connection', socket => {
     Object.keys(players).forEach(socketID => {
       players[socketID].position = playerQueue.indexOf(socketID)
     })
+    socket.broadcast.emit('queueUpdate', Object.values(players))
     console.log('Client has disconnected');
   });
 });
@@ -142,13 +154,31 @@ function collisionCheck () {
   }
 }
 function scoreCheck () {
-  if (player1Score >= 5 || player2Score >= 5) {
+  if ((player1Score < 5 && player2Score < 5)) once = 0;
+  else if ((player1Score >= 5 || player2Score >= 5) && once === 0) {
+    once = 1
     ball.speedX = 0;
     setTimeout(() => {
       player1Status = 0;
       player2Status = 0;
+      let loserSocket
+      if (player1Score >= 5) {
+        loserSocket = playerQueue[1]
+        playerQueue.splice(1, 1)
+      }
+      else {
+        loserSocket = playerQueue[0]
+        playerQueue.splice(0, 1)
+      }
+      playerQueue.push(loserSocket)
+      Object.keys(players).forEach(socketID => {
+        players[socketID].position = playerQueue.indexOf(socketID)
+      })
+      io.sockets.emit('queueUpdate', Object.values(players))
       reset()
-    }, 1000);
+    }, 3000);
+  } else if ((player1Score >= 5 || player2Score >= 5) && once === 1) {
+    ball.speedX = 0;
   }
 }
 function reset () {
