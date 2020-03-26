@@ -190,8 +190,10 @@ function displayPlayerPics () {
   players.forEach((plyr) => {
     if (plyr.id !== socket.id && plyr.position !== null) {
       let position = plyr.position
+      let xPos = positions[position].xPos
+      let yPos = positions[position].yPos
       // console.log(plyr.position)
-      let { xPos, yPos } = positions[position]
+      // let { xPos, yPos } = positions[position]
       if (plyr.dbID && !faces[plyr.id]) {
         faces[plyr.id] = 'loading'
         getPlayerPic(plyr.id, plyr.dbID);
