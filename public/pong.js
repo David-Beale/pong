@@ -188,8 +188,8 @@ function displayScore () {
 }
 function displayPlayerPics () {
   players.forEach((plyr) => {
-    if (plyr.id !== socket.id && plyr.position <=9) {
-      let position = plyr.position
+    let position = plyr.position
+    if (plyr.id !== socket.id && position <=9 && position >=0) {
       let xPos = positions[position].xPos
       let yPos = positions[position].yPos
       // console.log(plyr.position)
