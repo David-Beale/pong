@@ -189,8 +189,9 @@ function displayScore () {
 function displayPlayerPics () {
   players.forEach((plyr) => {
     if (plyr.id !== socket.id && plyr.position !== null) {
+      let position = plyr.position
       // console.log(plyr.position)
-      let { xPos, yPos } = positions[plyr.position]
+      let { xPos, yPos } = positions[position]
       if (plyr.dbID && !faces[plyr.id]) {
         faces[plyr.id] = 'loading'
         getPlayerPic(plyr.id, plyr.dbID);
