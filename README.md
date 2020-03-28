@@ -8,10 +8,10 @@ https://db-pongv2.herokuapp.com/
 
 ## Installation
 
-run `npm install` to install dependecies and create a .env file in the root directory with the following properties:
-DB_USER = <insert user>
-DB_PASS = <inser password>
-Please note, the app is designed to connect to the social gaming database which contains player information.
+run `npm install` to install dependecies and create a .env file in the root directory with the following properties:  
+DB_USER = <insert user>  
+DB_PASS = <inser password>  
+Please note, the app is designed to connect to the social gaming database which contains player information.  
 
 ## Features
 * 1v1 multiplayer game
