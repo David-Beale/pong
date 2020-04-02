@@ -72,8 +72,8 @@ async function preload () {
   let id = getQueryParams('a', url);
   let pw = getQueryParams('b', url);
   if (id && pw) {
-    // await fetch(`http://localhost:4000/profile/?a=${id}&b=${pw}`)
-    await fetch(`https://db-pongv2.herokuapp.com/profile/?a=${id}&b=${pw}`)
+    await fetch(`http://localhost:4000/profile/?a=${id}&b=${pw}`)
+    // await fetch(`https://db-pongv2.herokuapp.com/profile/?a=${id}&b=${pw}`)
       .then(res => res.status < 400 ? res : Promise.reject(res))
       .then(res => {
         return res.json()
@@ -296,8 +296,8 @@ function displayPosition () {
 }
 function getPlayerPic (socketID, dbID) {
   console.log('getting pic')
-  // fetch(`http://localhost:4000/face/?a=${dbID}`)
-  fetch(`https://db-pongv2.herokuapp.com/face/?a=${dbID}`)
+  fetch(`http://localhost:4000/face/?a=${dbID}`)
+  // fetch(`https://db-pongv2.herokuapp.com/face/?a=${dbID}`)
     
   
     .then(res => res.status < 400 ? res : Promise.reject(res))
