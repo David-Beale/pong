@@ -296,8 +296,8 @@ function displayPosition () {
 }
 function getPlayerPic (socketID, dbID) {
   console.log('getting pic')
-  fetch(`http://localhost:4000/face/?a=${dbID}`)
-  // fetch(`https://db-pongv2.herokuapp.com/face/?a=${dbID}`)
+  // fetch(`http://localhost:4000/face/?a=${dbID}`)
+  fetch(`https://db-pongv2.herokuapp.com/face/?a=${dbID}`)
     
   
     .then(res => res.status < 400 ? res : Promise.reject(res))
