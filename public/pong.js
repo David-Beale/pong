@@ -24,45 +24,37 @@ let faces = {};
 let players = [];
 let positions = {
   0: {
-    xPos: -425,
-    yPos: -425,
+    xPos: -400,
+    yPos: -360,
   },
   1: {
-    xPos: 325,
-    yPos: -420,
+    xPos: 350,
+    yPos: -360,
   },
   2: {
-    xPos: -475,
-    yPos: 335,
+    xPos: -260,
+    yPos: 320,
   },
   3: {
-    xPos: -370,
-    yPos: 335,
+    xPos: -130,
+    yPos: 320,
   },
   4: {
-    xPos: -265,
-    yPos: 335,
+    xPos: 0,
+    yPos: 320,
   },
   5: {
-    xPos: -160,
-    yPos: 335,
+    xPos: 130,
+    yPos: 320,
   },
   6: {
-    xPos: -55,
-    yPos: 335,
+    xPos: 260,
+    yPos: 320,
   },
   7: {
-    xPos: 50,
-    yPos: 335,
+    xPos: 390,
+    yPos: 320,
   },
-  8: {
-    xPos: 155,
-    yPos: 335,
-  },
-  9: {
-    xPos: 260,
-    yPos: 335,
-  }
 
 }
 
@@ -84,14 +76,11 @@ async function preload () {
         profileImage = data.avatar;
       })
   }
-  // player1Face = loadImage('./assets/brad.png');
-  // player2Face = loadImage('./assets/Jen.png');
-
 }
 function setup () {
   socket = io();
   angleMode(DEGREES)
-  c = createCanvas(1000, 900);
+  c = createCanvas(1000, 750);
   createReset();
 
   paddle1 = new Paddle(-480, 10, 70)
@@ -130,16 +119,16 @@ function draw () {
     playerFace = loadImage(profileImage);
     profileImage = '';
   }
-  translate(500, 450)
+  translate(500, 375)
   if (playerFace && playerPos !== null) {
     let { xPos, yPos } = positions[playerPos]
-    image(playerFace, xPos, yPos, 100, 100);
-    renderOtherText(name, 20, 'blue', xPos, yPos);
-  } else if (playerPos !== null) {
+    image(playerFace, xPos, yPos, 50, 50);
+    renderOtherText(name, 15, 'blue', xPos, yPos);
+  } else if (playerPos !== null && playerPos <=7) {
     let { xPos, yPos } = positions[playerPos]
     fill(255);
-    circle(xPos + 50, yPos + 50, 100);
-    renderOtherText(name, 20, 'blue', xPos, yPos);
+    circle(xPos + 25, yPos + 25, 50);
+    renderOtherText(name, 15, 'blue', xPos, yPos);
   }
   displayPlayerPics()
   displayQueue();
@@ -183,30 +172,27 @@ function displayScore () {
   textSize(20)
   fill(100, 150, 250)
   textAlign(CENTER);
-  text(`Player 1: ${player1Score}`, -250, -365)
-  text(`Player 2: ${player2Score}`, +250, -365)
+  text(`Player 1: ${player1Score}`, -250, -330)
+  text(`Player 2: ${player2Score}`, +250, -330)
 }
 function displayPlayerPics () {
-  console.log(players)
   players.forEach((plyr) => {
     let position = plyr.position
-    if (plyr.id !== socket.id && position <=9 && position >=0) {
+    if (plyr.id !== socket.id && position <=7 && position >=0) {
       let xPos = positions[position].xPos
       let yPos = positions[position].yPos
-      // console.log(plyr.position)
-      // let { xPos, yPos } = positions[position]
       if (plyr.dbID && !faces[plyr.id]) {
         faces[plyr.id] = 'loading'
         getPlayerPic(plyr.id, plyr.dbID);
       }
       if (faces[plyr.id] && faces[plyr.id] !== 'loading') {
-        image(faces[plyr.id], xPos, yPos, 100, 100);
+        image(faces[plyr.id], xPos, yPos, 50, 50);
 
       } else {
         fill(0, 0, 255);
-        circle(xPos + 50, yPos + 50, 100);
+        circle(xPos + 25, yPos + 25, 50);
       }
-      if (plyr.name) renderOtherText(plyr.name, 20, 'blue', xPos, yPos);
+      if (plyr.name) renderOtherText(plyr.name, 15, 'blue', xPos, yPos);
     }
   })
 }
@@ -287,12 +273,12 @@ function displayWaitingForOther () {
   button.hide()
 }
 function displayPosition () {
-  textSize(40)
+  textSize(30)
   fill(250, 150, 100)
   textAlign(CENTER);
-  if (playerPos === 0) text(`You are Player 1`, 0, -350)
-  else if (playerPos === 1) text(`You are Player 2`, 0, -350)
-  else text(`You are Spectating`, 0, -350)
+  if (playerPos === 0) text(`You are Player 1`, 0, -325)
+  else if (playerPos === 1) text(`You are Player 2`, 0, -325)
+  else text(`You are Spectating`, 0, -325)
 }
 function getPlayerPic (socketID, dbID) {
   console.log('getting pic')
@@ -312,8 +298,8 @@ function getPlayerPic (socketID, dbID) {
 }
 function renderOtherText (name, size, color, xPos, yPos) {
   rectMode(CORNER)
-  let x = xPos + 50;
-  let y = yPos + 25;
+  let x = xPos + 25;
+  let y = yPos;
   let bbox = font.textBounds(name, x, y, size);
   fill(255);
   rect(bbox.x, bbox.y, bbox.w + 5, bbox.h);
@@ -325,8 +311,8 @@ function renderOtherText (name, size, color, xPos, yPos) {
   rectMode(CENTER)
 }
 function displayQueue () {
-  textSize(20)
+  textSize(15)
   fill(100, 150, 250)
   textAlign(CENTER);
-  text(`Spectators waiting to play:`, -350, 325)
+  text(`Spectators waiting to play:`, -370, 350)
 }
